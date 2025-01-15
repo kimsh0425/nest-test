@@ -48,7 +48,7 @@ export class PlayersService {
   }
 
   // 특정 기준으로 선수 검색
-searchPlayers(criteria: { level?: number; team?: string }) {
+searchPlayers(criteria: { level?: string; team?: string }) {
   return this.players.filter((player) => {
     return (
       (criteria.level === undefined || player.level >= criteria.level) &&

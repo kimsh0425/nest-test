@@ -38,7 +38,7 @@ export class PlayersController {
   // 특정 기준으로 선수 검색
 @Get('search')
 search(
-  @Body() criteria: { level?: number; team?: string },
+  @Body() criteria: { level?: string; team?: string },
 ) {
   return this.playersService.searchPlayers(criteria);
 }
