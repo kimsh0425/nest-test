@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Put, Delete, Patch, Param, Headers, ForbiddenException } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
-import { ChangeStatusDto } from './change-status.dto'; // DTO 임포트
+import { UpdateStatusDto } from '../entities/update-status.dto';
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -43,9 +43,9 @@ export class TournamentsController {
   @Patch(':id/status')
   changeStatus(
     @Param('id') id: number,
-    @Body() changeStatusDto: ChangeStatusDto, statusDto: { status: '대기' | '진행중' | '완료' },
+    @Body() updateStatusDto: UpdateStatusDto,
   ) {
-    return this.tournamentsService.changeStatus(id, statusDto.status);
+    return this.tournamentsService.changeStatus(id, updateStatusDto.status);
   }
 
   // 참가자 추가 (중복 방지)
