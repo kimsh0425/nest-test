@@ -6,11 +6,14 @@ import { Player } from '../entities/player.entity';
 
 @Injectable()
 export class TournamentsService {
-  private participantIdCounter = 1; // 참가자 ID 순서대로 증가
-
+  // TournamentsService가 Tournament와 Player 두 엔티티를 모두 다뤄야 하므로,
+  // 각각의 Repository를 주입받아 사용한다.
   constructor(
     @InjectRepository(Tournament)
     private readonly tournamentRepository: Repository<Tournament>,
+
+    @InjectRepository(Player)
+    private readonly playerRepository: Repository<Player>,
   ) {}
 
   // 모든 토너먼트 조회
@@ -18,11 +21,17 @@ export class TournamentsService {
     return await this.tournamentRepository.find();
   }
 
-  // 특정 토너먼트 조회
-  async findById(id: number) {
-    const tournament = await this.tournamentRepository.findOne({ where: { id } });
+  /**
+   * [기존 findById] 토너먼트 하나 찾기
+   */
+  async findById(id: number): Promise<Tournament> {
+    // relations: ['participants']로 참가자들도 같이 로드
+    const tournament = await this.tournamentRepository.findOne({
+      where: { id },
+      relations: ['participants'],
+    });
     if (!tournament) {
-      throw new NotFoundException('Tournament not found'); // 없는 경우 에러 반환
+      throw new NotFoundException('Tournament not found');
     }
     return tournament;
   }
@@ -64,25 +73,34 @@ export class TournamentsService {
     return await this.tournamentRepository.save(tournament); // 저장 후 반환
   }
 
-  // 참가자 추가 (중복 방지)
-  async join(id: number, participantDto: { name: string }) {
-    const tournament = await this.findById(id); 
-    if (tournament.participants.some(p => p.name === participantDto.name)) {
+  /**
+   * [새로운 join 방식] 
+   * - 이미 DB에 등록된 Player(선수)를 playerId로 찾아와
+   * - 중복 여부 체크 후, 해당 Tournament에 참가시킨다.
+   */
+  async join(tournamentId: number, playerId: number) {
+    // 1) 토너먼트 찾기 (+참가자들 relations)
+    const tournament = await this.findById(tournamentId);
+
+    // 2) 선수 찾기
+    const player = await this.playerRepository.findOne({ where: { id: playerId } });
+    if (!player) {
+      throw new BadRequestException('Player not found');
+    }
+
+    // 3) 이미 참가 중인지 확인
+    if (tournament.participants.some((p) => p.id === playerId)) {
       throw new BadRequestException('Participant already joined this tournament.');
     }
-  
-    // Player 엔티티 객체를 직접 생성
-    const participant = new Player();
-    // DB가 자동 ID 생성하므로, 수동 id 할당 X
-    participant.name = participantDto.name;
-    participant.level = null; 
-    participant.team = null;
-    participant.tournament = tournament; // 여기서 tournament 필드도 세팅
-  
-    // push
-    tournament.participants.push(participant);
-  
-    // save
+
+    // 4) 선수와 토너먼트의 관계 설정 (player.tournament)
+    player.tournament = tournament;
+    await this.playerRepository.save(player); // DB 반영 (player 테이블 업데이트)
+
+    // 5) tournament의 participants 배열에도 추가
+    tournament.participants.push(player);
+
+    // 6) 토너먼트 DB 갱신
     return await this.tournamentRepository.save(tournament);
   }
 }
