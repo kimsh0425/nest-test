@@ -9,6 +9,9 @@ export class Player {
   @Column()
   name: string;
 
+  @Column({nullable:true}) 
+  age: number;
+
   @Column()
   level: string;
 
