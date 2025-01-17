@@ -50,7 +50,8 @@ export class TournamentsController {
 
   // 참가자 추가 (중복 방지)
   @Post(':id/join')
-  join(@Param('id') id: number, @Body() participantDto: { name: string }) {
-    return this.tournamentsService.join(id, participantDto);
-  }
+join(@Param('id') id: number, @Body() body: { playerId: number }) {
+  // 'playerId'라는 숫자를 body로 받는다
+  return this.tournamentsService.join(id, body.playerId);
+}
 }
