@@ -81,4 +81,3 @@ addHistory(
   return this.playersService.addPlayerHistory(id, record);
 }
 }
-
